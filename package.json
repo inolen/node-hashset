@@ -1,0 +1,27 @@
+{
+  "name": "hashset",
+  "version": "0.0.1",
+  "description": "Native hashset for Node.js",
+  "main": "./index.js",
+  "keywords": [
+    "hash",
+    "set",
+    "hashset"
+  ],
+  "author": {
+    "name": "Anthony Pesch",
+    "email": "inolen@gmail.com"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "license": "MIT",
+  "scripts": {
+    "install": "node-gyp configure build",
+    "test": "make test"
+  },
+  "devDependencies": {
+    "mocha": "~1.14.0",
+    "jshint": "~2.3.0"
+  }
+}
