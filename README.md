@@ -14,7 +14,7 @@ if (!cache['foobar']) {
 }
 ```
 
-This works great for tens of thousands of items, but it really starts to slow down in v8 around the 100,000 - 1,000,000 mark.
+This works good for up to a million items, but it starts to grind down to a halt in v8 around the 10,000,000 mark.
 
 node-hashset implements a stricly typed hashset with [std::unsorted_map](http://en.cppreference.com/w/cpp/container/unordered_map) to enable high-volume sets.
 

@@ -12,10 +12,12 @@
     "name": "Anthony Pesch",
     "email": "inolen@gmail.com"
   },
-  "engines": {
-    "node": "*"
-  },
+  "homepage": "https://github.com/inolen/node-hashset",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inolen/node-hashset.git"
+  },
   "scripts": {
     "install": "node-gyp configure build",
     "test": "make test"
