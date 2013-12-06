@@ -19,7 +19,7 @@ var HashSet = require('../index');
       set = new HashSet[type]();
     });
 
-    test('add()', function () {
+    test('add(), contains()', function () {
       set.add(key1);
       assert(set.contains(key1));
       assert(!set.contains(missing));

@@ -1,5 +1,5 @@
 {
-  "name": "hashset",
+  "name": "hashset-native",
   "version": "0.0.1",
   "description": "Native hashset for Node.js",
   "main": "./index.js",

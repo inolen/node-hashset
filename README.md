@@ -14,20 +14,20 @@ if (!cache['foobar']) {
 }
 ```
 
-This works good for up to a million items, but it starts to grind down to a halt in v8 around the 10,000,000 mark.
+This works good for up to a few million items, but then it starts to grind v8 down to a halt.
 
 node-hashset implements a stricly typed hashset with [std::unsorted_map](http://en.cppreference.com/w/cpp/container/unordered_map) to enable high-volume sets.
 
 ## Installation
 
 ```bash
-$ npm install hashset
+$ npm install hashset-native
 ```
 
 ## Quick start
 
 ```javascript
-var HashSet = require('hashset');
+var HashSet = require('hashset-native');
 var set = new HashSet.string();
 set.add('foobar');
 ```
