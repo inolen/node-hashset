@@ -68,7 +68,7 @@ v8::Handle<v8::Value> HashSet<int32_t>::Add(const v8::Arguments &args) {
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsInt32()) {
+	if (args.Length() < 1 || !args[0]->IsInt32()) {
 		return node::ThrowTypeError("argument 0 must be an integer");
 	}
 
@@ -84,7 +84,7 @@ v8::Handle<v8::Value> HashSet<int32_t>::Contains(const v8::Arguments &args) {
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsInt32()) {
+	if (args.Length() < 1 || !args[0]->IsInt32()) {
 		return node::ThrowTypeError("argument 0 must be an integer");
 	}
 
@@ -98,7 +98,7 @@ v8::Handle<v8::Value> HashSet<int32_t>::Remove(const v8::Arguments &args) {
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsInt32()) {
+	if (args.Length() < 1 || !args[0]->IsInt32()) {
 		return node::ThrowTypeError("argument 0 must be an integer");
 	}
 
@@ -115,7 +115,7 @@ v8::Handle<v8::Value> HashSet<std::string>::Add(const v8::Arguments &args) {
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsString()) {
+	if (args.Length() < 1 || !args[0]->IsString()) {
 		return node::ThrowTypeError("argument 0 must be a string");
 	}
 
@@ -133,7 +133,7 @@ v8::Handle<v8::Value> HashSet<std::string>::Contains(const v8::Arguments &args) 
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsString()) {
+	if (args.Length() < 1 || !args[0]->IsString()) {
 		return node::ThrowTypeError("argument 0 must be a string");
 	}
 
@@ -149,7 +149,7 @@ v8::Handle<v8::Value> HashSet<std::string>::Remove(const v8::Arguments &args) {
 	v8::HandleScope scope;
 	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
-	if (!args[0]->IsString()) {
+	if (args.Length() < 1 || !args[0]->IsString()) {
 		return node::ThrowTypeError("argument 0 must be a string");
 	}
 
