@@ -6,20 +6,120 @@
 #include <v8.h>
 #include <unordered_set>
 
-template <typename T>
+template <typename T> bool IsA(const v8::Local<v8::Value> &arg);
+template <typename T> T UnwrapValue(const v8::Local<v8::Value> &arg);
+template <typename T> v8::Handle<v8::Value> WrapValue(const T &value);
+
+template <typename K>
 class HashSet : public node::ObjectWrap {
 private:
-	std::unordered_set<T> set;
+	std::unordered_set<K> set;
+
+	class It : public node::ObjectWrap {
+	private:
+		const std::unordered_set<K> *set;
+		typename std::unordered_set<K>::const_iterator it;
+
+	public:
+		It(const std::unordered_set<K> *set) : set(set) {
+			it = set->begin();
+		}
+
+		static v8::Handle<v8::Value> New(const std::unordered_set<K> *set) {
+			v8::Local<v8::Object> obj = GetCtor()->NewInstance();
+			It *it = new It(set);
+
+			it->Wrap(obj);
+
+			return obj;
+		}
+
+		static v8::Handle<v8::Value> HasNext(const v8::Arguments &args) {
+			v8::HandleScope scope;
+			It *obj = node::ObjectWrap::Unwrap<It>(args.This());
+
+			return v8::Boolean::New(obj->it != obj->set->end());
+		}
+
+		static v8::Handle<v8::Value> Next(const v8::Arguments &args) {
+			v8::HandleScope scope;
+			It *obj = node::ObjectWrap::Unwrap<It>(args.This());
+
+			K value = *obj->it;
+			obj->it++;
+
+			return WrapValue(value);
+		}
+
+		static v8::Persistent<v8::Function> GetCtor() {
+			static v8::Persistent<v8::Function> persistentCtor;
+
+			if (persistentCtor.IsEmpty()) {
+				auto tpl = v8::FunctionTemplate::New();
+				tpl->SetClassName(v8::String::NewSymbol("HashSetIt"));
+				tpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+				auto prototype = tpl->PrototypeTemplate();
+				prototype->Set("hasNext", v8::FunctionTemplate::New(HasNext)->GetFunction());
+				prototype->Set("next", v8::FunctionTemplate::New(Next)->GetFunction());
+
+				persistentCtor = v8::Persistent<v8::Function>::New(tpl->GetFunction());
+			}
+
+			return persistentCtor;
+		}
+	};
 
 	static v8::Handle<v8::Value> New(const v8::Arguments &args) {
 		HashSet *obj = new HashSet();
+
 		obj->Wrap(args.This());
+
 		return args.This();
 	}
 
-	static v8::Handle<v8::Value> Add(const v8::Arguments &args);
-	static v8::Handle<v8::Value> Contains(const v8::Arguments &args);
-	static v8::Handle<v8::Value> Remove(const v8::Arguments &args);
+	static v8::Handle<v8::Value> Add(const v8::Arguments &args) {
+		v8::HandleScope scope;
+		HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
+
+		if (args.Length() < 1 || !IsA<K>(args[0])) {
+			return node::ThrowTypeError("invalid type for argument 0");
+		}
+
+		K key = UnwrapValue<K>(args[0]);
+
+		obj->set.insert(key);
+
+		return scope.Close(v8::Undefined());
+	}
+
+	static v8::Handle<v8::Value> Contains(const v8::Arguments &args) {
+		v8::HandleScope scope;
+		HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
+
+		if (args.Length() < 1 || !IsA<K>(args[0])) {
+			return node::ThrowTypeError("invalid type for argument 0");
+		}
+
+		K key = UnwrapValue<K>(args[0]);
+
+		return scope.Close(v8::Boolean::New(obj->set.count(key) > 0));
+	}
+
+	static v8::Handle<v8::Value> Remove(const v8::Arguments &args) {
+		v8::HandleScope scope;
+		HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
+
+		if (args.Length() < 1 || !IsA<K>(args[0])) {
+			return node::ThrowTypeError("invalid type for argument 0");
+		}
+
+		K key = UnwrapValue<K>(args[0]);
+
+		obj->set.erase(key);
+
+		return scope.Close(v8::Undefined());
+	}
 
 	static v8::Handle<v8::Value> Clear(const v8::Arguments &args) {
 		v8::HandleScope scope;
@@ -35,6 +135,13 @@ private:
 		HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
 
 		return scope.Close(v8::Boolean::New(obj->set.empty()));
+	}
+
+	static v8::Handle<v8::Value> Iterator(const v8::Arguments &args) {
+		v8::HandleScope scope;
+		HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
+
+		return scope.Close(It::New(&obj->set));
 	}
 
 	static v8::Handle<v8::Value> Size(const v8::Arguments &args) {
@@ -55,6 +162,7 @@ public:
 		prototype->Set("clear", v8::FunctionTemplate::New(Clear)->GetFunction());
 		prototype->Set("contains", v8::FunctionTemplate::New(Contains)->GetFunction());
 		prototype->Set("empty", v8::FunctionTemplate::New(Empty)->GetFunction());
+		prototype->Set("iterator", v8::FunctionTemplate::New(Iterator)->GetFunction());
 		prototype->Set("remove", v8::FunctionTemplate::New(Remove)->GetFunction());
 		prototype->Set("size", v8::FunctionTemplate::New(Size)->GetFunction());
 
@@ -64,102 +172,36 @@ public:
 
 // int32_t specialization
 template <>
-v8::Handle<v8::Value> HashSet<int32_t>::Add(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsInt32()) {
-		return node::ThrowTypeError("argument 0 must be an integer");
-	}
-
-	int32_t key = args[0]->Int32Value();
-
-	obj->set.insert(key);
-
-	return scope.Close(v8::Undefined());
+bool IsA<int32_t>(const v8::Local<v8::Value> &arg) {
+	return arg->IsInt32();
 }
 
 template <>
-v8::Handle<v8::Value> HashSet<int32_t>::Contains(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsInt32()) {
-		return node::ThrowTypeError("argument 0 must be an integer");
-	}
-
-	int32_t key = args[0]->Int32Value();
-
-	return scope.Close(v8::Boolean::New(obj->set.count(key) > 0));
+int32_t UnwrapValue<int32_t>(const v8::Local<v8::Value> &arg) {
+	return arg->Int32Value();
 }
 
 template <>
-v8::Handle<v8::Value> HashSet<int32_t>::Remove(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsInt32()) {
-		return node::ThrowTypeError("argument 0 must be an integer");
-	}
-
-	int32_t key = args[0]->Int32Value();
-
-	obj->set.erase(key);
-
-	return scope.Close(v8::Undefined());
+v8::Handle<v8::Value> WrapValue<int32_t>(const int32_t &value) {
+	return v8::Integer::New(value);
 }
 
 // std::string specialization
 template <>
-v8::Handle<v8::Value> HashSet<std::string>::Add(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsString()) {
-		return node::ThrowTypeError("argument 0 must be a string");
-	}
-
-	v8::Local<v8::String> keyLocal = v8::Local<v8::String>::Cast(args[0]);
-	v8::String::Utf8Value keyUtf(keyLocal);
-	std::string key = *keyUtf;
-
-	obj->set.insert(key);
-
-	return scope.Close(v8::Undefined());
+bool IsA<std::string>(const v8::Local<v8::Value> &arg) {
+	return arg->IsString();
 }
 
 template <>
-v8::Handle<v8::Value> HashSet<std::string>::Contains(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsString()) {
-		return node::ThrowTypeError("argument 0 must be a string");
-	}
-
-	v8::Local<v8::String> keyLocal = v8::Local<v8::String>::Cast(args[0]);
-	v8::String::Utf8Value keyUtf(keyLocal);
-	std::string key = *keyUtf;
-
-	return scope.Close(v8::Boolean::New(obj->set.count(key) > 0));
+std::string UnwrapValue<std::string>(const v8::Local<v8::Value> &arg) {
+	v8::Local<v8::String> local = v8::Local<v8::String>::Cast(arg);
+	v8::String::Utf8Value utf(local);
+	return *utf;
 }
 
 template <>
-v8::Handle<v8::Value> HashSet<std::string>::Remove(const v8::Arguments &args) {
-	v8::HandleScope scope;
-	HashSet *obj = node::ObjectWrap::Unwrap<HashSet>(args.This());
-
-	if (args.Length() < 1 || !args[0]->IsString()) {
-		return node::ThrowTypeError("argument 0 must be a string");
-	}
-
-	v8::Local<v8::String> keyLocal = v8::Local<v8::String>::Cast(args[0]);
-	v8::String::Utf8Value keyUtf(keyLocal);
-	std::string key = *keyUtf;
-
-	obj->set.erase(key);
-
-	return scope.Close(v8::Undefined());
+v8::Handle<v8::Value> WrapValue<std::string>(const std::string &value) {
+	return v8::String::New(value.c_str());
 }
 
 #endif

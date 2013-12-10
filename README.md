@@ -14,9 +14,9 @@ if (!cache['foobar']) {
 }
 ```
 
-This works good for up to a few million items, but then it starts to grind v8 down to a halt.
+This works well for up to a few million items, but after that it starts to grind v8 down to a halt.
 
-node-hashset implements a stricly typed hashset with [std::unsorted_map](http://en.cppreference.com/w/cpp/container/unordered_map) to enable high-volume sets.
+node-hashset implements a stricly typed hashset with [std::unsorted_set](http://en.cppreference.com/w/cpp/container/unordered_set) to enable working with extremely large sets.
 
 ## Installation
 
@@ -45,6 +45,18 @@ Adds `value` to the set.
 ### contains(value)
 
 Returns a boolean value indicating if the set contains `value`.
+
+### iterator()
+
+Returns an iterator to iterate over the values in the set.
+
+```javascript
+var it = set.iterator();
+
+while (it.hasNext()) {
+  console.log(it.next());
+}
+```
 
 ### remove(value)
 

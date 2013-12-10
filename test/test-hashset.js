@@ -4,13 +4,14 @@ var assert = require('assert');
 var HashSet = require('../index');
 
 [
-  { type: 'string', key1: 'key1', key2: 'key2', missing: 'invalid' },
-  { type: 'int32', key1: -13, key2: 79, missing: 42 }
+  { type: 'string', keys: ['key1', 'key2', 'invalid'] },
+  { type: 'int32', keys: [-13, 79, 42] }
 ].forEach(function (it) {
   var type = it.type;
-  var key1 = it.key1;
-  var key2 = it.key2;
-  var missing = it.missing;
+  var keys = it.keys;
+  var key1 = it.keys[0];
+  var key2 = it.keys[1];
+  var missing = it.keys[2];
 
   suite('hashset-' + type, function() {
     var set;
@@ -52,6 +53,21 @@ var HashSet = require('../index');
       assert(set.empty());
       set.add(key1);
       assert(!set.empty());
+    });
+
+    test('iterator()', function () {
+      set.add(key1);
+      set.add(key2);
+
+      var it = set.iterator();
+
+      assert(it.hasNext());
+      assert(keys.indexOf(it.next()) !== -1);
+
+      assert(it.hasNext());
+      assert(keys.indexOf(it.next()) !== -1);
+
+      assert(!it.hasNext());
     });
   });
 });
